@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Fraud Detection System</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-2: #172033;
+            --border: #334155;
+            --muted: #94a3b8;
+            --blue: #3b82f6;
+        }
+
+        body {
+            background: var(--bg);
+            color: #f8fafc;
+            font-family: "Segoe UI", Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        .header {
+            padding: 18px 0 8px;
+        }
+
+        .header h1 {
+            font-size: 30px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .card-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .form-control,
+        .form-select {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #fff;
+            min-height: 46px;
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #0f172a;
+            color: #fff;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+        }
+
+        .form-select option {
+            background: #0f172a;
+            color: #fff;
+        }
+
+        .btn-evaluate {
+            min-height: 48px;
+            font-weight: 600;
+            border-radius: 9px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 650;
+            margin-bottom: 15px;
+        }
+
+        .rule-box {
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            height: 100%;
+        }
+
+        .rule-label {
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .rule-text {
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .result-box {
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid;
+        }
+
+        .result-box.safe {
+            background: rgba(25, 135, 84, 0.13);
+            border-color: #198754;
+        }
+
+        .result-box.suspicious {
+            background: rgba(255, 193, 7, 0.10);
+            border-color: #ffc107;
+        }
+
+        .result-box.fraud {
+            background: rgba(220, 53, 69, 0.12);
+            border-color: #dc3545;
+        }
+
+        .result-box.invalid {
+            background: rgba(108, 117, 125, 0.12);
+            border-color: #6c757d;
+        }
+
+        .result-status {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .result-message {
+            color: #cbd5e1;
+            margin-bottom: 0;
+        }
+
+        .detail-card {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .detail-label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .triggered-rule {
+            margin-bottom: 7px;
+        }
+
+        .footer-note {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .badge-model {
+            background: #24324a;
+            color: #cbd5e1;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container py-4 py-md-5">
+    <div class="main-wrapper">
+
+        <div class="header text-center mb-4">
+            <h1>Online Fraud Detection System</h1>
+            <p class="subtitle">
+                Rule-based transaction screening prototype
+            </p>
+        </div>
+
+        <div class="card-panel p-4 p-md-5 mb-4">
+            <div class="row g-4">
+
+                <div class="col-lg-7">
+                    <div class="section-title">Enter Transaction Details</div>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Transaction Amount (₹)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                name="amount"
+                                class="form-control"
+                                placeholder="e.g. 75000"
+                                value="{{ request.form.get('amount', '') }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Account Balance Before Transaction (₹)
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="old_balance"
+                                class="form-control"
+                                placeholder="e.g. 150000"
+                                value="{{ request.form.get('old_balance', '') }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Transaction Hour</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="23"
+                                    name="hour"
+                                    class="form-control"
+                                    placeholder="0 - 23"
+                                    value="{{ request.form.get('hour', '') }}"
+                                    required
+                                >
+                                <small class="text-secondary">
+                                    23 = 11 PM, 0 = midnight
+                                </small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Failed Login Attempts</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    name="failed_attempts"
+                                    class="form-control"
+                                    placeholder="e.g. 0"
+                                    value="{{ request.form.get('failed_attempts', '') }}"
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Transaction Location</label>
+                            <select name="is_foreign" class="form-select" required>
+                                <option value="0"
+                                    {% if request.form.get('is_foreign', '0') == '0' %}
+                                    selected
+                                    {% endif %}>
+                                    Domestic
+                                </option>
+                                <option value="1"
+                                    {% if request.form.get('is_foreign') == '1' %}
+                                    selected
+                                    {% endif %}>
+                                    International
+                                </option>
+                            </select>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary btn-evaluate w-100"
+                        >
+                            Evaluate Transaction
+                        </button>
+                    </form>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="section-title">How This Prototype Decides</div>
+
+                    <div class="rule-box mb-3">
+                        <div class="rule-label text-danger">FRAUD</div>
+                        <p class="rule-text">
+                            Amount &gt; ₹150,000 + night hours (11 PM - 5 AM)
+                            + international transaction
+                            <strong>OR</strong> failed attempts ≥ 4.
+                        </p>
+                    </div>
+
+                    <div class="rule-box mb-3">
+                        <div class="rule-label text-warning">SUSPICIOUS</div>
+                        <p class="rule-text">
+                            Failed attempts ≥ 3
+                            <strong>OR</strong>
+                            amount &gt; ₹50,000 + international transaction.
+                        </p>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-label text-success">SAFE</div>
+                        <p class="rule-text">
+                            Normal transactions that do not trigger the
+                            predefined suspicious or fraud rules.
+                        </p>
+                    </div>
+
+                    <div class="mt-3">
+                        <span class="badge badge-model">
+                            Synthetic historical records trained: {{ dataset_size }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if result %}
+        <div class="card-panel p-4 mb-4">
+            <div class="result-box {{ result.class }}">
+                <div class="result-status">{{ result.status }}</div>
+                <p class="result-message mt-1">{{ result.message }}</p>
+
+                {% if result.amount is defined %}
+                <hr class="border-secondary my-4">
+
+                <div class="section-title mb-3">Transaction Summary</div>
+
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                        <div class="detail-card">
+                            <span class="detail-label">Amount</span>
+                            <span class="detail-value">
+                                ₹{{ "{:,.2f}".format(result.amount) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="detail-card">
+                            <span class="detail-label">Balance Before</span>
+                            <span class="detail-value">
+                                ₹{{ "{:,.2f}".format(result.old_balance) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="detail-card">
+                            <span class="detail-label">Hour</span>
+                            <span class="detail-value">{{ result.hour }}:00</span>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="detail-card">
+                            <span class="detail-label">Location</span>
+                            <span class="detail-value">{{ result.is_foreign }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-2 mt-1">
+                    <div class="col-6">
+                        <div class="detail-card">
+                            <span class="detail-label">Failed Attempts</span>
+                            <span class="detail-value">
+                                {{ result.failed_attempts }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="detail-card">
+                            <span class="detail-label">Balance After</span>
+                            <span class="detail-value">
+                                ₹{{ "{:,.2f}".format(result.new_balance) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="section-title mb-2">Triggered Rules</div>
+
+                    {% if result.triggered_rules %}
+                        {% for rule in result.triggered_rules %}
+                        <div class="triggered-rule">
+                            <span class="badge text-bg-danger">Rule</span>
+                            {{ rule }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-success">
+                            No predefined risk rule was triggered.
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <small class="text-secondary">
+                        Historical-model classification:
+                        <strong>{{ result.model_prediction }}</strong>.
+                        The final result shown above is determined by the
+                        project's predefined rules.
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="text-center footer-note">
+            Prototype only — uses a self-generated synthetic historical dataset.
+            No real bank or customer data is connected.
+        </p>
+
+    </div>
+</div>
+</body>
+</html>
